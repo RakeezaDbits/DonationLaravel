@@ -12,6 +12,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="HARF Admin" />
     <link rel="manifest" href="/site.webmanifest" />
+     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
@@ -64,7 +65,7 @@
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden;                      
         }
         
         .nav-link {
@@ -202,10 +203,6 @@
         <a href="{{ route('admin.donations.index') }}" class="nav-link flex items-center px-4 py-3 rounded-lg {{ request()->routeIs('admin.donations.*') ? 'active' : '' }}">
             <i class="fas fa-heart text-gray-500 mr-3"></i>
             Donations
-        </a>
-        <a href="{{ route('admin.pledges.index') }}" class="nav-link flex items-center px-4 py-3 rounded-lg {{ request()->routeIs('admin.pledges.*') ? 'active' : '' }}">
-            <i class="fas fa-handshake text-gray-500 mr-3"></i>
-            Pledges
         </a>
         <a href="{{ route('admin.users.index') }}" class="nav-link flex items-center px-4 py-3 rounded-lg {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
             <i class="fas fa-users text-gray-500 mr-3"></i>
