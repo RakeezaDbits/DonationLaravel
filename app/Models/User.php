@@ -12,8 +12,14 @@ class User extends Authenticatable implements JWTSubject
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'phone', 'password', 'role', 'donor_type', 
-        'is_anonymous', 'is_active'
+        'name',
+        'email',
+        'phone',
+        'password',
+        'role',
+        'donor_type',
+        'is_anonymous',
+        'is_active'
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -37,6 +43,18 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+    public static function getAllRoles()
+    {
+        $column = \DB::select('SHOW COLUMNS FROM users WHERE Field = "role"')[0];
+
+        preg_match("/^enum\((.*)\)$/", $column->Type, $matches);
+
+        $roles = array_map(function ($value) {
+            return trim($value, "'");
+        }, explode(',', $matches[1]));
+
+        return $roles;
     }
 
     // Relationships

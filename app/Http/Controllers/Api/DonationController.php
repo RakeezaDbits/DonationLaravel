@@ -9,6 +9,8 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Srmklive\PayPal\Services\PayPal as PayPalClient;
+
 
 class DonationController extends Controller
 {
@@ -76,7 +78,7 @@ class DonationController extends Controller
     {
         $userId = auth()->id();
         $user = auth()->user();
-        
+
         $amount = cache()->get("monthly_donation_amount_{$userId}");
         $paymentData = cache()->get("monthly_donation_payment_{$userId}");
 
@@ -132,7 +134,7 @@ class DonationController extends Controller
         }
 
         $sessionId = $request->header('Session-ID') ?? uniqid();
-        
+
         cache()->put("guest_donation_info_{$sessionId}", [
             'name' => $request->name,
             'email' => $request->email,
@@ -182,7 +184,7 @@ class DonationController extends Controller
         }
 
         $sessionId = $request->session_id;
-        
+
         // Handle file upload
         $screenshotPath = null;
         if ($request->hasFile('payment_screenshot')) {
@@ -212,7 +214,7 @@ class DonationController extends Controller
         }
 
         $sessionId = $request->session_id;
-        
+
         $donorInfo = cache()->get("guest_donation_info_{$sessionId}");
         $amount = cache()->get("guest_donation_amount_{$sessionId}");
         $paymentData = cache()->get("guest_donation_payment_{$sessionId}");
@@ -251,7 +253,7 @@ class DonationController extends Controller
     public function history(Request $request)
     {
         $user = auth()->user();
-        
+
         $query = Donation::where('user_id', $user->id);
 
         // Apply filters
@@ -280,5 +282,116 @@ class DonationController extends Controller
             'success' => true,
             'donations' => $donations
         ]);
+    }
+    public function paypalCreate(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:1',
+            'currency' => 'nullable|string|size:3'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $provider->getAccessToken();
+
+        $order = $provider->createOrder([
+            "intent" => "CAPTURE",
+            "purchase_units" => [
+                [
+                    "amount" => [
+                        "currency_code" => $request->currency ?? "USD",
+                        "value" => $request->amount
+                    ]
+                ]
+            ]
+        ]);
+
+        foreach ($order['links'] as $link) {
+            if ($link['rel'] === 'approve') {
+                return response()->json([
+                    'success' => true,
+                    'approval_url' => $link['href']
+                ]);
+            }
+        }
+
+        return response()->json(['error' => 'Unable to create PayPal order'], 500);
+    }
+
+    public function paypalCapture(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $provider->getAccessToken();
+
+        $result = $provider->capturePaymentOrder($request->token);
+
+        if (isset($result['status']) && $result['status'] === 'COMPLETED') {
+            // Yahan sirf PayPal ka confirmation milega
+            // User se screenshot baad me liya jayega
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment completed, please upload screenshot.',
+                'paypal_data' => $result
+            ]);
+        }
+
+        return response()->json(['error' => 'Payment not completed', 'details' => $result], 400);
+    }
+
+
+    public function paypalCheckout(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:1',
+            'currency' => 'nullable|string|size:3'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $provider->getAccessToken();
+
+        $order = $provider->createOrder([
+            "intent" => "CAPTURE",
+            "purchase_units" => [[
+                "amount" => [
+                    "currency_code" => $request->currency ?? "USD",
+                    "value" => $request->amount
+                ]
+            ]],
+            "application_context" => [
+                "return_url" => url("/api/donation/paypal/capture"),
+                "cancel_url" => url("/api/donation/paypal/cancel")
+            ]
+        ]);
+
+        foreach ($order['links'] as $link) {
+            if ($link['rel'] === 'approve') {
+                return response()->json([
+                    'success' => true,
+                    'approval_url' => $link['href'],
+                    'order_id' => $order['id']
+                ]);
+            }
+        }
+
+        return response()->json(['error' => 'Unable to create PayPal order'], 500);
     }
 }

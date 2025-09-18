@@ -15,7 +15,19 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['donor', 'admin', 'super_admin'])->default('donor');
+            $table->enum('role', [
+                'donor',
+                'admin',
+                'super_admin',
+                'President',
+                'VicePresident',
+                'secretary',
+                'assistant_secretary',
+                'treasurer',
+                'assistant_treasurer',
+                'committee_member'
+            ])->default('donor');
+
             $table->enum('donor_type', ['monthly', 'one_time'])->nullable();
             $table->boolean('is_anonymous')->default(false);
             $table->boolean('is_active')->default(true);

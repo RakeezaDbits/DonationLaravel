@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\PaymentController;
 
 Route::view('/', 'welcome');
 
@@ -17,6 +18,9 @@ Route::view('/', 'welcome');
 Route::get('admin/login', [AuthController::class, 'showLoginForm'])->name('admin.login');
 Route::post('admin/login', [AuthController::class, 'login'])->name('admin.login.post');
 Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
+
+Route::get('/pay', [PaymentController::class, 'createPayment']);
+Route::get('/success', [PaymentController::class, 'capturePayment']);
 
 // Admin Panel Routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -35,7 +39,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('pledges/{pledge}/toggle-status', [PledgeController::class, 'toggleStatus'])->name('pledges.toggle-status');
     
     // Users Management
-    Route::resource('users', UserController::class)->only(['index', 'show']);
+    Route::resource('users', UserController::class)->only(['index', 'show', 'create', 'store']);
+
     Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     
     // Notifications Management

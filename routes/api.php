@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DonationController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\PaymentController;
 
 // Authentication Routes
 Route::prefix('auth')->group(function () {
@@ -31,6 +32,16 @@ Route::prefix('donation/guest')->group(function () {
     Route::post('payment', [DonationController::class, 'guestPayment']);
     Route::post('submit', [DonationController::class, 'guestSubmit']);
 });
+
+
+Route::post('/donation/create', [PaymentController::class, 'createPayment']);
+Route::get('/donation/capture', [PaymentController::class, 'capturePayment']);
+
+Route::post('/donation/paypal/create', [DonationController::class, 'paypalCreate']);
+Route::post('/donation/paypal/checkout', [DonationController::class, 'paypalCheckout']);
+Route::post('/donation/paypal/capture', [DonationController::class, 'paypalCapture']);
+
+
 
 // Donation History (Authenticated Users)
 Route::middleware('jwt.auth')->group(function () {
