@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DonationController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\PaymentController;
+// use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Api\PaypalDonationController;
 
 // Authentication Routes
 Route::prefix('auth')->group(function () {
@@ -12,10 +14,11 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('password/forgot', [AuthController::class, 'forgotPassword']);
     Route::post('password/reset', [AuthController::class, 'resetPassword']);
-    
+
     Route::middleware('jwt.auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
     });
+    Route::post('auth/google', [GoogleAuthController::class, 'loginWithGoogle']);
 });
 
 // Monthly User Donation Routes (Authenticated)
@@ -33,16 +36,10 @@ Route::prefix('donation/guest')->group(function () {
     Route::post('submit', [DonationController::class, 'guestSubmit']);
 });
 
-
-Route::post('/donation/create', [PaymentController::class, 'createPayment']);
-Route::get('/donation/capture', [PaymentController::class, 'capturePayment']);
-
-Route::post('/donation/paypal/create', [DonationController::class, 'paypalCreate']);
-Route::post('/donation/paypal/checkout', [DonationController::class, 'paypalCheckout']);
-Route::post('/donation/paypal/capture', [DonationController::class, 'paypalCapture']);
-
-
-
+Route::prefix('donation/paypal')->group(function () {
+    Route::post('create-order', [PaypalDonationController::class, 'createOrder']);
+    Route::post('capture/{orderId}', [PaypalDonationController::class, 'captureOrder']);
+});
 // Donation History (Authenticated Users)
 Route::middleware('jwt.auth')->group(function () {
     Route::get('donation/history', [DonationController::class, 'history']);

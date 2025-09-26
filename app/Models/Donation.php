@@ -56,4 +56,8 @@ class Donation extends Model
     {
         return $query->where('donor_name', 'LIKE', "%{$name}%");
     }
+
+    protected $casts = [
+        'payment_details' => 'array',
+    ];
 }
